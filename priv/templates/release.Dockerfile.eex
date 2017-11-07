@@ -1,0 +1,7 @@
+FROM <%= base_image %>
+ENV DEBIAN_FRONTEND=noninteractive MIX_ENV=<%= mix_env %> 
+COPY <%= build_output_path_relative %>/app/ /opt/app/
+<%= for release_extra_docker_command <- release_extra_docker_commands do %>
+<%= release_extra_docker_command %>
+<% end %>
+ENTRYPOINT ["/opt/app/bin/<%= rel_name %>", "foreground"]

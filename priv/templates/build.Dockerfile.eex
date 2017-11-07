@@ -1,0 +1,34 @@
+FROM <%= base_image %>
+ENV DEBIAN_FRONTEND=noninteractive MIX_ENV=<%= mix_env %> 
+
+RUN mkdir /root/src
+<%= for dir <- ["config", "lib", "rel", "priv"] do %>
+<%= if File.exists?(dir) and File.dir?(dir) do %>
+COPY <%= dir %>/ /root/src/<%= dir %>/
+<% end %>
+<% end %>
+COPY mix.exs /root/src/
+COPY mix.lock /root/src/
+
+RUN \
+<%= unless Enum.empty?(git_deps_urls) do %>
+  command -v git || (apt-get update && apt-get install git -y) && \
+  mkdir -p /root/.ssh && \
+  chmod 700 /root/.ssh && \
+
+<%= for git_dep_url <- git_deps_urls do %>
+<%= case URI.parse(git_dep_url) do %>
+<% %URI{scheme: "ssh", host: host, port: nil} -> %>
+  ssh-keyscan <%= host %> >> /root/.ssh/known_hosts && \
+<% %URI{scheme: "ssh", host: host, port: port} -> %>
+  ssh-keyscan -p <%= port %> <%= host %> >> /root/.ssh/known_hosts && \
+<% _ -> %>
+<% end %>
+<% end %>
+
+  chmod 600 /root/.ssh/known_hosts && \
+<% end %>
+  mix local.hex --force && \
+  mix local.rebar --force
+
+WORKDIR /root/src
