@@ -128,11 +128,9 @@ defmodule Mix.Tasks.Dockerate do
       Mix.Project.config 
       |> Keyword.get(:deps)
       |> Enum.filter(fn
-        {_app, opts} when is_list(opts) ->
-          false
-        {_app, requirement} ->
+        {_app, requirement}  ->
           Keyword.keyword?(requirement) and Keyword.has_key?(requirement, :git)
-        {_app, requirement, opts} when is_list(opts) ->
+        {_app, requirement, _opts} ->
           Keyword.keyword?(requirement) and Keyword.has_key?(requirement, :git)
       end)
       |> Enum.map(fn(dep) ->
