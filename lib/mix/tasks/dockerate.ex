@@ -125,22 +125,13 @@ defmodule Mix.Tasks.Dockerate do
 
     # Check if we're using any git dependencies
     git_deps_urls = 
-      Mix.Project.config 
-      |> Keyword.get(:deps)
+      Mix.Dep.Lock.read 
+      |> Map.values
       |> Enum.filter(fn
-        {_app, requirement}  ->
-          Keyword.keyword?(requirement) and Keyword.has_key?(requirement, :git)
-        {_app, requirement, _opts} ->
-          Keyword.keyword?(requirement) and Keyword.has_key?(requirement, :git)
+        {:git, _git_url, _, _} -> true
+        _ -> false
       end)
-      |> Enum.map(fn(dep) ->
-        dep_url = case dep do 
-          {_app, requirement} ->
-            requirement
-          {_app, requirement, _opts} ->
-            requirement
-        end |> Keyword.get(:git)
-
+      |> Enum.map(fn({_, dep_url, _, _}) ->
         case URI.parse(dep_url) do
           %URI{scheme: nil} ->
             "ssh://#{dep_url}"
