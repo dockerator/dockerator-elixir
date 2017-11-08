@@ -1,5 +1,8 @@
 # Dockerator for Elixir
 
+[![Hex.pm](https://img.shields.io/hexpm/v/dockerator.svg)](https://hex.pm/packages/dockerator)
+[![Hex.pm](https://img.shields.io/hexpm/dt/dockerator.svg)](https://hex.pm/packages/dockerator)
+
 Tool for turning Elixir apps into Docker images without a pain.
 
 ## Rationale
@@ -154,6 +157,17 @@ to configure Dockerator:
   image it will invoke `apt-get install git`.
 * At the moment it will not handle SSH agent on other platforms than Mac OS X.
   However it should be quite trivial to add others.
+
+
+# Let me believe that Karma returns!
+
+Developers are humans, too, we also need to pay bills from time to time. If you
+wish to repay time and effort thay you have saved thanks to this piece of code,
+you can click one of this nice, shiny buttons below:
+
+| Paypal | Bitcoin | Beerpay |
+| :----: | :-----: | :-----: |
+| [![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5BF9TT5YQNU5J) | [![](https://i.imgur.com/dFkg3fw.png)](https://i.imgur.com/5VJeR9h.png)<br> 1LHsmP3odWxu1bzUfe2ydrewArB72XbN7n | [![Go to Beerpay](https://beerpay.io/mspanc/jumbo/badge.svg)](https://beerpay.io/mspanc/jumbo) |
 
 
 # Authors
