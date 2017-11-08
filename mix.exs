@@ -7,7 +7,9 @@ defmodule Dockerator.Mixfile do
       version: "1.0.0",
       elixir: "~> 1.4",
       start_permanent: Mix.env == :stag or Mix.env == :prod,
-      deps: deps()
+      deps: deps(),
+      description: description(),
+      package: package(),
     ]
   end
 
@@ -21,5 +23,20 @@ defmodule Dockerator.Mixfile do
     [
       {:distillery, "~> 1.5", runtime: false}
     ]
+  end
+
+  defp description do
+    """
+    Tool for turning Elixir apps into Docker images without a pain.
+    """
+  end
+
+  defp package do
+    [
+     files: ["lib", "priv", "mix.exs", "README*"],
+     maintainers: ["Marcin Lewandowski"],
+     licenses: ["MIT"],
+     links: %{"GitHub" => "https://github.com/dockerator/dockerator-elixir"},
+   ]
   end
 end
