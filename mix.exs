@@ -21,7 +21,8 @@ defmodule Dockerator.Mixfile do
 
   defp deps do
     [
-      {:distillery, "~> 1.5", runtime: false}
+      {:distillery, "~> 1.5", runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev},
     ]
   end
 
