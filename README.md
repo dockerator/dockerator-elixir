@@ -74,34 +74,6 @@ git add rel/
 ```
 
 
-For example your `mix.exs` might look like this after the changes:
-
-```elixir
-defmodule MyApp.Mixfile do
-  use Mix.Project
-
-  def project do
-    [app: :my_app,
-     version: "0.1.0",
-     elixir: "~> 1.4",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps(),
-     dockerator_target_image: "myaccount/my_app"]
-  end
-
-  def application do
-    [extra_applications: [:logger], mod: {MyApp, []}]
-  end
-
-  defp deps do
-    [
-      {:dockerator, "~> 1.0", runtime: false},
-    ]
-  end
-end
-```
-
 Then you can just call the following command each time you need to assemble
 a Docker image tagged as `latest`:
 
@@ -127,24 +99,65 @@ MIX_ENV=prod mix dockerate release
 ```
 
 
+
 # Configuration
 
 You can use the following settings in the `project` of the `mix.exs` in order
 to configure Dockerator:
 
-* `:dockerator_base_image` - (optional) - a string containing base Docker 
-  image name used for build and release, defaults to 
+* `:dockerator_target_image` - (mandatory) - a string containing target
+  Docker image name, e.g. `"myaccount/my_app"`.
+* `:dockerator_base_image` - (optional) - a string or keyword list containing 
+  name of a base Docker image name used for build and release. If it is
+  a string, it will use provided name for both build and release. If it is
+  a keyword list, you can specify two keys `:build` or/and `:release` to
+  specify different images for these two phases. Defaults to 
   `elixir:latest`. It is strongly encouraged to change this to the particular
   [Elixir version](https://hub.docker.com/r/library/elixir/tags/) to have
   repeatable builds.
-* `:dockerator_target_image` - (mandatory) - a string containing target
-  Docker image name, e.g. `"myaccount/my_app"`.
 * `:dockerator_ssh_agent` - (optional) - a boolean indicating whether
   we should use SSH agent for the build. Defaults to `false`. Turn it on
   if you're using dependencies that are hosted on private git/SSH repositories.
 * `:dockerator_release_extra_docker_commands` - optional - a list of strings that
   will contain extra commands that will be added to the release image. For
   example you can add something like `["EXPOSE 4000"]`. 
+
+## Example
+
+For example your `mix.exs` might look like this after the changes:
+
+```elixir
+defmodule MyApp.Mixfile do
+  use Mix.Project
+
+  def project do
+    [app: :my_app,
+     version: "0.1.0",
+     elixir: "~> 1.4",
+     build_embedded: Mix.env == :prod,
+     start_permanent: Mix.env == :prod,
+     deps: deps(),
+     dockerator_ssh_agent: true,
+     dockerator_release_extra_docker_commands: [
+       "EXPOSE 4000",
+       "RUN apt-get update && apt-get install somepackage",
+     ],
+     dockerator_base_image: [build: "elixir:1.4.5", release: "ubuntu:xenial"],
+     dockerator_target_image: "myaccount/my_app",
+    ]
+  end
+
+  def application do
+    [extra_applications: [:logger], mod: {MyApp, []}]
+  end
+
+  defp deps do
+    [
+      {:dockerator, "~> 1.1", runtime: false},
+    ]
+  end
+end
+```
 
 
 # Limitations

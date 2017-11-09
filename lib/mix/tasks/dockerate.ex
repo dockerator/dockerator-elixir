@@ -18,19 +18,23 @@ defmodule Mix.Tasks.Dockerate do
 
 
     # Determine base image
-    base_image = 
+    {base_image_build, base_image_release} = 
       case Mix.Project.config |> Keyword.get(:dockerator_base_image) do
         nil ->
-          @default_base_image
+          {@default_base_image, @default_base_image}
 
         image when is_binary(image) ->
-          image
+          {image, image}
+
+        image when is_list(image) ->
+          {Keyword.get(image, :build, @default_base_image), Keyword.get(image, :release, @default_base_image)}
 
         other ->
           error "Invalid base image #{inspect(other)}"
           Kernel.exit(:invalid_base_image)
       end
-    info "Using #{base_image} as a base Docker image"
+    info "Using #{base_image_build} as a base Docker image for build phase"
+    info "Using #{base_image_release} as a base Docker image for release phase"
 
 
     # Determine target tag
@@ -158,11 +162,11 @@ defmodule Mix.Tasks.Dockerate do
     # Generate scripts from templates
     dockerfile_build = 
       Path.join(templates_path, "build.Dockerfile.eex")
-      |> EEx.eval_file([base_image: base_image, mix_env: Mix.env, git_deps_urls: git_deps_urls])
+      |> EEx.eval_file([base_image: base_image_build, mix_env: Mix.env, git_deps_urls: git_deps_urls])
 
     dockerfile_release = 
       Path.join(templates_path, "release.Dockerfile.eex")
-      |> EEx.eval_file([base_image: base_image, mix_env: Mix.env, build_output_path_relative: build_output_path_relative, release_extra_docker_commands: release_extra_docker_commands, rel_name: rel_name])
+      |> EEx.eval_file([base_image: base_image_release, mix_env: Mix.env, build_output_path_relative: build_output_path_relative, release_extra_docker_commands: release_extra_docker_commands, rel_name: rel_name])
 
     # Remove empty lines in Dockerfile as they're deprecated
     dockerfile_build = Regex.replace(~r/\n+/, dockerfile_build, "\n")
