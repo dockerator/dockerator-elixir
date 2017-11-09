@@ -140,6 +140,7 @@ defmodule Mix.Tasks.Dockerate do
             other
         end
       end)
+      |> Enum.uniq
 
     case git_deps_urls do
       [] ->
