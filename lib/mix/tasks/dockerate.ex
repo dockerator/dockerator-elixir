@@ -213,7 +213,7 @@ defmodule Mix.Tasks.Dockerate do
           info "  docker rm #{ssh_agent_docker_name} -f"
 
         {"'false'\n", 0} ->
-          info "SSH agent seems to be present but not"
+          info "SSH agent seems to be present but not running"
           error "TODO: This is not supported yet"
           Kernel.exit(:todo)
 
