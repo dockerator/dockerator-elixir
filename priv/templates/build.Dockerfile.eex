@@ -2,7 +2,7 @@ FROM <%= base_image %>
 ENV DEBIAN_FRONTEND=noninteractive MIX_ENV=<%= mix_env %> 
 
 RUN mkdir /root/src
-<%= for dir <- ["config", "lib", "rel", "priv", "web"] do %>
+<%= for dir <- source_dirs do %>
 <%= if File.exists?(dir) and File.dir?(dir) do %>
 COPY <%= dir %>/ /root/src/<%= dir %>/
 <% end %>

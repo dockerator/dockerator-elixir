@@ -3,8 +3,10 @@ defmodule Mix.Tasks.Dockerate do
 
   @default_base_image "elixir:latest"
   @ssh_agent_image "nardeas/ssh-agent:latest"
+  @default_source_dirs ["config", "lib", "rel", "priv", "web"]
 
   @shortdoc "Assemble a Docker image"
+
 
   def run(args) do
     # Determine app name
@@ -35,6 +37,22 @@ defmodule Mix.Tasks.Dockerate do
       end
     info "Using #{base_image_build} as a base Docker image for build phase"
     info "Using #{base_image_release} as a base Docker image for release phase"
+
+
+    # Determine source directories
+    source_dirs = 
+      case Mix.Project.config |> Keyword.get(:dockerator_source_dirs) do
+        nil ->
+          @default_source_dirs
+
+        other when is_list(other) ->
+          other
+
+        other ->
+          error "Invalid source dirs #{inspect(other)}"
+          Kernel.exit(:invalid_source_dirs)
+      end
+    info "Using #{inspect(source_dirs)} as a list of source directories"
 
 
     # Determine target tag
@@ -162,7 +180,7 @@ defmodule Mix.Tasks.Dockerate do
     # Generate scripts from templates
     dockerfile_build = 
       Path.join(templates_path, "build.Dockerfile.eex")
-      |> EEx.eval_file([base_image: base_image_build, mix_env: Mix.env, git_deps_urls: git_deps_urls])
+      |> EEx.eval_file([base_image: base_image_build, mix_env: Mix.env, git_deps_urls: git_deps_urls, source_dirs: source_dirs])
 
     dockerfile_release = 
       Path.join(templates_path, "release.Dockerfile.eex")
@@ -210,7 +228,7 @@ defmodule Mix.Tasks.Dockerate do
     ssh_agent_docker_name =
       String.replace(target_image, "/", "_") <> "-sshagent"
 
-    if ssh_agent do
+    if ssh_agent do      
       case System.cmd "docker", ["inspect", "-f", "'{{.State.Running}}'", ssh_agent_docker_name] do
         {"'true'\n", 0} ->
           info "SSH agent seems to be already running"
@@ -218,44 +236,21 @@ defmodule Mix.Tasks.Dockerate do
           info "  docker rm #{ssh_agent_docker_name} -f"
 
         {"'false'\n", 0} ->
-          info "SSH agent seems to be present but not running"
-          error "TODO: This is not supported yet"
-          Kernel.exit(:todo)
+          info "SSH agent seems to be present but not running, starting"
+          case docker_cmd_passthrough ["start", ssh_agent_docker_name] do
+            :ok ->
+              ssh_agent_add_keys!(ssh_agent_docker_name)
+
+            {:error, code} ->
+              error "Docker run returned error code #{code}"
+              Kernel.exit(:failed_docker_start_ssh_agent)
+          end
 
         {"\n", 1} ->
           info "Starting SSH agent (#{ssh_agent_docker_name})"
           case docker_cmd_passthrough ["run", "-d", "--name=#{ssh_agent_docker_name}", @ssh_agent_image] do
             :ok ->
-              case :os.type do
-                {:unix, :darwin} ->
-                  info "Adding your SSH keys to the SSH agent."
-                  info "  Please type password for your SSH keys in the new Terminal window if they're password-protected."
-
-                  # This hack is necessary because it is very hard to call 
-                  # PTY-enabled command from Elixir/Erlang, so we just spawn new 
-                  # Terminal window in case of users' SSH keys are 
-                  # password-protected.
-                  #
-                  # The last line kills the terminal window so we don't wait for
-                  # Command+Q.       
-                  tmp_script_path = "/tmp/#{ssh_agent_docker_name}.sh"
-                  tmp_script_body = """
-                  #!/bin/sh
-                  docker run --rm --volumes-from=#{ssh_agent_docker_name} -v ~/.ssh:/.ssh -it #{@ssh_agent_image} ssh-add /root/.ssh/id_rsa
-                  kill -9 $(ps -p $(ps -p $PPID -o ppid=) -o ppid=) 
-                  """
-
-                  File.write!(tmp_script_path, tmp_script_body)
-                  File.chmod!(tmp_script_path, 0o700)
-
-                  System.cmd "open", ["-W", "-a", "Terminal.app", tmp_script_path]
-
-                  File.rm!(tmp_script_path)
-
-                _ ->
-                  error "TODO: This operating system is not supported yet"
-                  Kernel.exit(:todo)
-              end
+              ssh_agent_add_keys!(ssh_agent_docker_name)
 
           {:error, code} ->
             error "Docker run returned error code #{code}"
@@ -318,6 +313,40 @@ defmodule Mix.Tasks.Dockerate do
     
 
     info "Done. Your app is bundled in the image #{target_image_release}."
+  end
+
+
+  defp ssh_agent_add_keys!(ssh_agent_docker_name) do
+    case :os.type do
+      {:unix, :darwin} ->
+        info "Adding your SSH keys to the SSH agent."
+        info "  Please type password for your SSH keys in the new Terminal window if they're password-protected."
+
+        # This hack is necessary because it is very hard to call 
+        # PTY-enabled command from Elixir/Erlang, so we just spawn new 
+        # Terminal window in case of users' SSH keys are 
+        # password-protected.
+        #
+        # The last line kills the terminal window so we don't wait for
+        # Command+Q.       
+        tmp_script_path = "/tmp/#{ssh_agent_docker_name}.sh"
+        tmp_script_body = """
+        #!/bin/sh
+        docker run --rm --volumes-from=#{ssh_agent_docker_name} -v ~/.ssh:/.ssh -it #{@ssh_agent_image} ssh-add /root/.ssh/id_rsa
+        kill -9 $(ps -p $(ps -p $PPID -o ppid=) -o ppid=) 
+        """
+
+        File.write!(tmp_script_path, tmp_script_body)
+        File.chmod!(tmp_script_path, 0o700)
+
+        System.cmd "open", ["-W", "-a", "Terminal.app", tmp_script_path]
+
+        File.rm!(tmp_script_path)
+
+      _ ->
+        error "TODO: This operating system is not supported yet"
+        Kernel.exit(:todo)
+    end
   end
 
 

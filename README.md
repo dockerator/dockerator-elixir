@@ -47,7 +47,7 @@ Add it to the dependencies, by adding the following the `deps` in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dockerator, "~> 1.0", runtime: false},
+    {:dockerator, "~> 1.1", runtime: false},
   ]
 end
 ``` 
@@ -118,6 +118,9 @@ to configure Dockerator:
 * `:dockerator_ssh_agent` - (optional) - a boolean indicating whether
   we should use SSH agent for the build. Defaults to `false`. Turn it on
   if you're using dependencies that are hosted on private git/SSH repositories.
+* `:dockerator_source_dirs` - (optional) - a list of strings containing a list
+  of source directories that will be copied to the build image. Defaults to
+  `["config", "lib", "rel", "priv", "web"]`.
 * `:dockerator_release_extra_docker_commands` - optional - a list of strings that
   will contain extra commands that will be added to the release image. For
   example you can add something like `["EXPOSE 4000"]`. 
@@ -142,6 +145,7 @@ defmodule MyApp.Mixfile do
        "EXPOSE 4000",
        "RUN apt-get update && apt-get install somepackage",
      ],
+     dockerator_source_dirs: ["config", "lib", "rel", "priv", "web", "extra"],
      dockerator_base_image: [build: "elixir:1.4.5", release: "ubuntu:xenial"],
      dockerator_target_image: "myaccount/my_app",
     ]
