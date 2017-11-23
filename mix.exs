@@ -4,7 +4,7 @@ defmodule Dockerator.Mixfile do
   def project do
     [
       app: :dockerator,
-      version: "1.1.0",
+      version: "1.1.1",
       elixir: "~> 1.4",
       start_permanent: Mix.env == :stag or Mix.env == :prod,
       deps: deps(),
