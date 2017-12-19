@@ -14,13 +14,13 @@ defmodule Mix.Tasks.Dockerate do
     version = Mix.Project.config |> Keyword.get(:version)
     info "Assembling a Docker image for app #{app} #{version}, env = #{Mix.env}..."
 
-    # Determine release name 
+    # Determine release name
     # FIXME read this from rel/config.exs
     rel_name = app
 
 
     # Determine base image
-    {base_image_build, base_image_release} = 
+    {base_image_build, base_image_release} =
       case Mix.Project.config |> Keyword.get(:dockerator_base_image) do
         nil ->
           {@default_base_image, @default_base_image}
@@ -40,7 +40,7 @@ defmodule Mix.Tasks.Dockerate do
 
 
     # Determine source directories
-    source_dirs = 
+    source_dirs =
       case Mix.Project.config |> Keyword.get(:dockerator_source_dirs) do
         nil ->
           @default_source_dirs
@@ -70,7 +70,7 @@ defmodule Mix.Tasks.Dockerate do
 
 
     # Determine target image
-    target_image = 
+    target_image =
       case Mix.Project.config |> Keyword.get(:dockerator_target_image) do
         nil ->
           error "Target image is unset, please set :dockerator_target_image in the app's config in mix.exs"
@@ -89,8 +89,23 @@ defmodule Mix.Tasks.Dockerate do
     info "Using #{target_image_release} as a target Docker image"
 
 
+    # Determine extra build commands
+    build_extra_docker_commands =
+      case Mix.Project.config |> Keyword.get(:dockerator_build_extra_docker_commands) do
+        nil ->
+          []
+
+        other when is_list(other) ->
+          info "Using #{inspect(other)} as a list of extra commands for the build Docker image"
+          other
+
+        other ->
+          error "Invalid extra build commands #{inspect(other)}"
+          Kernel.exit(:invalid_build_extra_docker_commands)
+      end
+
     # Determine extra release commands
-    release_extra_docker_commands = 
+    release_extra_docker_commands =
       case Mix.Project.config |> Keyword.get(:dockerator_release_extra_docker_commands) do
         nil ->
           []
@@ -106,37 +121,37 @@ defmodule Mix.Tasks.Dockerate do
 
 
     # Determine templates' path
-    templates_path = 
+    templates_path =
       Mix.Project.deps_paths[:dockerator]
       |> Path.join("priv")
       |> Path.join("templates")
 
 
     # Determine build path
-    build_path = 
+    build_path =
       Mix.Project.build_path
       |> Path.join("dockerator")
 
-    build_output_path = 
+    build_output_path =
       build_path
       |> Path.join("output")
 
     build_output_path_relative =
-      build_output_path 
+      build_output_path
       |> Path.relative_to_cwd
 
-    build_scripts_path = 
+    build_scripts_path =
       build_path
       |> Path.join("scripts")
 
 
     # Create directory for build files
     with \
-      :ok <- File.mkdir_p(build_path), 
-      {:ok, _} <- File.rm_rf(build_output_path), 
-      :ok <- File.mkdir_p(build_output_path), 
+      :ok <- File.mkdir_p(build_path),
+      {:ok, _} <- File.rm_rf(build_output_path),
+      :ok <- File.mkdir_p(build_output_path),
       :ok <- File.mkdir_p(build_scripts_path)
-    do 
+    do
       info "Using #{build_path} as a temporary build path"
 
     else
@@ -146,8 +161,8 @@ defmodule Mix.Tasks.Dockerate do
     end
 
     # Check if we're using any git dependencies
-    git_deps_urls = 
-      Mix.Dep.Lock.read 
+    git_deps_urls =
+      Mix.Dep.Lock.read
       |> Map.values
       |> Enum.filter(fn
         {:git, _git_url, _, _} -> true
@@ -157,7 +172,7 @@ defmodule Mix.Tasks.Dockerate do
         case URI.parse(dep_url) do
           %URI{scheme: nil} ->
             "ssh://#{dep_url}"
-          
+
           other ->
             other
         end
@@ -178,11 +193,11 @@ defmodule Mix.Tasks.Dockerate do
 
 
     # Generate scripts from templates
-    dockerfile_build = 
+    dockerfile_build =
       Path.join(templates_path, "build.Dockerfile.eex")
-      |> EEx.eval_file([base_image: base_image_build, mix_env: Mix.env, git_deps_urls: git_deps_urls, source_dirs: source_dirs])
+      |> EEx.eval_file([base_image: base_image_build, mix_env: Mix.env, git_deps_urls: git_deps_urls, source_dirs: source_dirs, build_extra_docker_commands: build_extra_docker_commands])
 
-    dockerfile_release = 
+    dockerfile_release =
       Path.join(templates_path, "release.Dockerfile.eex")
       |> EEx.eval_file([base_image: base_image_release, mix_env: Mix.env, build_output_path_relative: build_output_path_relative, release_extra_docker_commands: release_extra_docker_commands, rel_name: rel_name])
 
@@ -190,11 +205,11 @@ defmodule Mix.Tasks.Dockerate do
     dockerfile_build = Regex.replace(~r/\n+/, dockerfile_build, "\n")
     dockerfile_release = Regex.replace(~r/\n+/, dockerfile_release, "\n")
 
-    dockerfile_build_path = 
+    dockerfile_build_path =
       build_scripts_path
       |> Path.join("build.Dockerfile")
 
-    dockerfile_release_path = 
+    dockerfile_release_path =
       build_scripts_path
       |> Path.join("release.Dockerfile")
 
@@ -212,14 +227,14 @@ defmodule Mix.Tasks.Dockerate do
 
 
     # Check if we need a SSH agent
-    ssh_agent = 
+    ssh_agent =
       case Mix.Project.config |> Keyword.get(:dockerator_ssh_agent) do
         nil ->
           false
 
         other when is_boolean(other) ->
           other
-        
+
         other ->
           error "Invalid SSH agent setting #{inspect(other)}"
           Kernel.exit(:invalid_ssh_agent)
@@ -228,7 +243,7 @@ defmodule Mix.Tasks.Dockerate do
     ssh_agent_docker_name =
       String.replace(target_image, "/", "_") <> "-sshagent"
 
-    if ssh_agent do      
+    if ssh_agent do
       case System.cmd "docker", ["inspect", "-f", "'{{.State.Running}}'", ssh_agent_docker_name] do
         {"'true'\n", 0} ->
           info "SSH agent seems to be already running"
@@ -270,23 +285,23 @@ defmodule Mix.Tasks.Dockerate do
         error "Docker build returned error code #{code}"
         Kernel.exit(:failed_docker_build)
     end
-    
+
 
     # Phase 2: Prepare release
     info "Building release"
 
     release_docker_extra_args = if ssh_agent do
-      ["--volumes-from=#{ssh_agent_docker_name}", "-e", "SSH_AUTH_SOCK=/.ssh-agent/socket"]   
+      ["--volumes-from=#{ssh_agent_docker_name}", "-e", "SSH_AUTH_SOCK=/.ssh-agent/socket"]
     else
       []
     end
 
-    release_docker_args = ["run"] ++ 
-      release_docker_extra_args ++ 
+    release_docker_args = ["run"] ++
+      release_docker_extra_args ++
       [
-        "--mount", "type=bind,source=#{build_output_path},target=/root/output", 
-        "--rm", 
-        "-t", target_image_build, 
+        "--mount", "type=bind,source=#{build_output_path},target=/root/output",
+        "--rm",
+        "-t", target_image_build,
         "sh", "-c", "(mix deps.get && mix compile && mix release && mv -v _build/#{Mix.env}/rel/#{rel_name} /root/output/app/)"
       ]
 
@@ -310,7 +325,7 @@ defmodule Mix.Tasks.Dockerate do
         error "Docker build returned error code #{code}"
         Kernel.exit(:failed_docker_build)
     end
-    
+
 
     info "Done. Your app is bundled in the image #{target_image_release}."
   end
@@ -322,18 +337,18 @@ defmodule Mix.Tasks.Dockerate do
         info "Adding your SSH keys to the SSH agent."
         info "  Please type password for your SSH keys in the new Terminal window if they're password-protected."
 
-        # This hack is necessary because it is very hard to call 
-        # PTY-enabled command from Elixir/Erlang, so we just spawn new 
-        # Terminal window in case of users' SSH keys are 
+        # This hack is necessary because it is very hard to call
+        # PTY-enabled command from Elixir/Erlang, so we just spawn new
+        # Terminal window in case of users' SSH keys are
         # password-protected.
         #
         # The last line kills the terminal window so we don't wait for
-        # Command+Q.       
+        # Command+Q.
         tmp_script_path = "/tmp/#{ssh_agent_docker_name}.sh"
         tmp_script_body = """
         #!/bin/sh
         docker run --rm --volumes-from=#{ssh_agent_docker_name} -v ~/.ssh:/.ssh -it #{@ssh_agent_image} ssh-add /root/.ssh/id_rsa
-        kill -9 $(ps -p $(ps -p $PPID -o ppid=) -o ppid=) 
+        kill -9 $(ps -p $(ps -p $PPID -o ppid=) -o ppid=)
         """
 
         File.write!(tmp_script_path, tmp_script_body)
