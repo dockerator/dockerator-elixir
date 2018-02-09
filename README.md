@@ -121,6 +121,9 @@ to configure Dockerator:
 * `:dockerator_source_dirs` - (optional) - a list of strings containing a list
   of source directories that will be copied to the build image. Defaults to
   `["config", "lib", "rel", "priv", "web"]`.
+* `:dockerator_build_extra_docker_commands` - optional - a list of strings that
+  will contain extra commands that will be added to the release image. For
+  example you can add something like `["apt-get install something"]`. 
 * `:dockerator_release_extra_docker_commands` - optional - a list of strings that
   will contain extra commands that will be added to the release image. For
   example you can add something like `["EXPOSE 4000"]`. 
@@ -141,6 +144,9 @@ defmodule MyApp.Mixfile do
      start_permanent: Mix.env == :prod,
      deps: deps(),
      dockerator_ssh_agent: true,
+     dockerator_build_extra_docker_commands: [
+       "RUN apt-get update && apt-get install somepackage",
+     ],
      dockerator_release_extra_docker_commands: [
        "EXPOSE 4000",
        "RUN apt-get update && apt-get install somepackage",
