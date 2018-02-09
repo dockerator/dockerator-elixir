@@ -179,7 +179,7 @@ end
 # Let me believe that Karma returns!
 
 Developers are humans, too, we also need to pay bills from time to time. If you
-wish to repay time and effort thay you have saved thanks to this piece of code,
+wish to repay time and effort that you have saved thanks to this piece of code,
 you can click one of this nice, shiny buttons below:
 
 | Paypal | Bitcoin | Beerpay |
