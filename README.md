@@ -47,7 +47,7 @@ Add it to the dependencies, by adding the following the `deps` in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:dockerator, "~> 1.1", runtime: false},
+    {:dockerator, "~> 1.2", runtime: false},
   ]
 end
 ``` 
@@ -163,7 +163,7 @@ defmodule MyApp.Mixfile do
 
   defp deps do
     [
-      {:dockerator, "~> 1.1", runtime: false},
+      {:dockerator, "~> 1.2", runtime: false},
     ]
   end
 end

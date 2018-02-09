@@ -44,7 +44,7 @@ defmodule Dockerator do
   ```elixir
   def deps do
     [
-      {:dockerator, "~> 1.1", runtime: false},
+      {:dockerator, "~> 1.2", runtime: false},
     ]
   end
   ``` 
@@ -160,7 +160,7 @@ defmodule Dockerator do
 
     defp deps do
       [
-        {:dockerator, "~> 1.1", runtime: false},
+        {:dockerator, "~> 1.2", runtime: false},
       ]
     end
   end
