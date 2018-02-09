@@ -1,5 +1,9 @@
 FROM <%= base_image %>
-ENV DEBIAN_FRONTEND=noninteractive MIX_ENV=<%= mix_env %> 
+ENV DEBIAN_FRONTEND=noninteractive MIX_ENV=<%= mix_env %>
+
+<%= for build_extra_docker_command <- build_extra_docker_commands do %>
+<%= build_extra_docker_command %>
+<% end %>
 
 RUN mkdir /root/src
 <%= for dir <- source_dirs do %>
