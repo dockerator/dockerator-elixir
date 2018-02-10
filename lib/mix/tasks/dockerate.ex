@@ -302,7 +302,7 @@ defmodule Mix.Tasks.Dockerate do
         "--mount", "type=bind,source=#{build_output_path},target=/root/output",
         "--rm",
         "-t", target_image_build,
-        "sh", "-c", "(mix deps.get && mix compile && mix release && mv -v _build/#{Mix.env}/rel/#{rel_name} /root/output/app/)"
+        "sh", "-c", "(mix deps.get && mix compile && mkdir -p priv/lib && find deps/*/priv/lib/*.so -exec cp -v '{}' priv/lib/ \\; && mix release && mv -v _build/#{Mix.env}/rel/#{rel_name} /root/output/app/)"
       ]
 
     case docker_cmd_passthrough release_docker_args do
