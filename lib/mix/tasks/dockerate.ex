@@ -296,13 +296,18 @@ defmodule Mix.Tasks.Dockerate do
       []
     end
 
+    # FIXME
+    # This contains a workaround for https://github.com/bitwalker/distillery/issues/314
+    # which is probably a bug in bundlex, but anyway doing sequence of 
+    # mix compile / rm -rf _build / mix release guarantees that NIFs are copied
+    # into release.
     release_docker_args = ["run"] ++
       release_docker_extra_args ++
       [
         "--mount", "type=bind,source=#{build_output_path},target=/root/output",
         "--rm",
         "-t", target_image_build,
-        "sh", "-c", "(mix deps.get && mix compile && mkdir -p priv/lib && find deps/*/priv/lib/*.so -exec cp -v '{}' priv/lib/ \\; && mix release && mv -v _build/#{Mix.env}/rel/#{rel_name} /root/output/app/)"
+        "sh", "-c", "(mix deps.get && mix compile && rm -rf _build && mix release && mv -v _build/#{Mix.env}/rel/#{rel_name} /root/output/app/)"
       ]
 
     case docker_cmd_passthrough release_docker_args do
