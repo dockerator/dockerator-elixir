@@ -27,6 +27,8 @@ In such cases Dockerator will save you a lot of time.
 * **SSH agent forwarding** - It can handle SSH agent forwarding so you can use 
   dependencies stored at private SSH repositories without exposing your 
   credentials.
+* **Does not run as root** - By default it does not run application inside
+  the container as root for additional layer of security.
 
 Internally it uses [Distillery](https://github.com/bitwalker/distillery) for
 building the actual release.
@@ -115,6 +117,8 @@ to configure Dockerator:
   `elixir:latest`. It is strongly encouraged to change this to the particular
   [Elixir version](https://hub.docker.com/r/library/elixir/tags/) to have
   repeatable builds.
+* `:dockerator_run_as_root` - (optional) - a booleaen indicating whether the
+  application inside the container should be run as root. Defaults to `false`.
 * `:dockerator_ssh_agent` - (optional) - a boolean indicating whether
   we should use SSH agent for the build. Defaults to `false`. Turn it on
   if you're using dependencies that are hosted on private git/SSH repositories.

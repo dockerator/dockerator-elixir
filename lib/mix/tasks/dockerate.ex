@@ -19,6 +19,17 @@ defmodule Mix.Tasks.Dockerate do
     rel_name = app
 
 
+    # Determine if we should run as root
+    run_as_root =
+      case Mix.Project.config |> Keyword.get(:dockerator_run_as_root, false) do
+        value when is_boolean(value) ->
+          value
+        
+        other ->
+          error "Invalid run_as_root setting #{inspect(other)}"
+          Kernel.exit(:invalid_run_as_root)
+      end
+
     # Determine base image
     {base_image_build, base_image_release} =
       case Mix.Project.config |> Keyword.get(:dockerator_base_image) do
@@ -195,11 +206,24 @@ defmodule Mix.Tasks.Dockerate do
     # Generate scripts from templates
     dockerfile_build =
       Path.join(templates_path, "build.Dockerfile.eex")
-      |> EEx.eval_file([base_image: base_image_build, mix_env: Mix.env, git_deps_urls: git_deps_urls, source_dirs: source_dirs, build_extra_docker_commands: build_extra_docker_commands])
+      |> EEx.eval_file([
+        base_image: base_image_build,
+        mix_env: Mix.env,
+        git_deps_urls: git_deps_urls,
+        source_dirs: source_dirs,
+        build_extra_docker_commands: build_extra_docker_commands
+      ])
 
     dockerfile_release =
       Path.join(templates_path, "release.Dockerfile.eex")
-      |> EEx.eval_file([base_image: base_image_release, mix_env: Mix.env, build_output_path_relative: build_output_path_relative, release_extra_docker_commands: release_extra_docker_commands, rel_name: rel_name])
+      |> EEx.eval_file([
+        base_image: base_image_release,
+        mix_env: Mix.env,
+        build_output_path_relative: build_output_path_relative,
+        release_extra_docker_commands: release_extra_docker_commands,
+        rel_name: rel_name,
+        run_as_root: run_as_root
+      ])
 
     # Remove empty lines in Dockerfile as they're deprecated
     dockerfile_build = Regex.replace(~r/\n+/, dockerfile_build, "\n")
