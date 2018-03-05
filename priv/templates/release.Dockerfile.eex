@@ -3,11 +3,12 @@ ENV DEBIAN_FRONTEND=noninteractive MIX_ENV=<%= mix_env %>
 <%= for release_extra_docker_command <- release_extra_docker_commands do %>
 <%= release_extra_docker_command %>
 <% end %>
+COPY <%= build_output_path_relative %>/app/ /opt/app/
 <%= unless run_as_root do %>
 RUN groupadd -g 999 app && useradd -r -u 999 -g app app
+RUN mkdir /opt/app/var && chown app:app /opt/app/var
 USER app
 <% end %>
-COPY <%= build_output_path_relative %>/app/ /opt/app/
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
   CMD ["/opt/app/bin/<%= rel_name %>", "ping"]
 ENTRYPOINT ["/opt/app/bin/<%= rel_name %>", "foreground"]
