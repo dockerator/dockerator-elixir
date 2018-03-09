@@ -188,7 +188,16 @@ defmodule Mix.Tasks.Dockerate do
             other
         end
       end)
-      |> Enum.uniq
+      |> Enum.uniq_by(fn(git_dep_url) ->
+        case URI.parse(git_dep_url) do
+          %URI{scheme: "ssh", host: host, port: nil} ->
+            {host, 22}
+          %URI{scheme: "ssh", host: host, port: port} ->
+            {host, port}
+          other ->
+            other
+        end
+      end)
 
     case git_deps_urls do
       [] ->
