@@ -371,7 +371,7 @@ defmodule Mix.Tasks.Dockerate do
 
   defp ssh_agent_add_keys!(ssh_agent_docker_name) do
     case :os.type do
-      {:unix, :darwin} ->
+      {:unix, subtype} ->
         info "Adding your SSH keys to the SSH agent."
         info "  Please type password for your SSH keys in the new Terminal window if they're password-protected."
 
@@ -386,18 +386,29 @@ defmodule Mix.Tasks.Dockerate do
         tmp_script_body = """
         #!/bin/sh
         docker run --rm --volumes-from=#{ssh_agent_docker_name} -v ~/.ssh:/.ssh -it #{@ssh_agent_image} ssh-add /root/.ssh/id_rsa
+        sleep 1
         kill -9 $(ps -p $(ps -p $PPID -o ppid=) -o ppid=)
         """
 
         File.write!(tmp_script_path, tmp_script_body)
         File.chmod!(tmp_script_path, 0o700)
 
-        System.cmd "open", ["-W", "-a", "Terminal.app", tmp_script_path]
+        case subtype do
+          :darwin ->
+            System.cmd "open", ["-W", "-a", "Terminal.app", tmp_script_path]
+
+          :linux ->
+            System.cmd "x-terminal-emulator", ["-hold", "-e", tmp_script_path]
+
+          other ->
+            error "TODO: This operating system subtype (#{inspect(other)}) is not supported yet"
+            Kernel.exit(:todo)            
+        end
 
         File.rm!(tmp_script_path)
 
-      _ ->
-        error "TODO: This operating system is not supported yet"
+      other ->
+        error "TODO: This operating system (#{inspect(other)}) is not supported yet"
         Kernel.exit(:todo)
     end
   end

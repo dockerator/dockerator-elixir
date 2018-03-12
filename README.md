@@ -182,8 +182,8 @@ end
   Ubuntu or Debian, however this is unimportant if you don't use git-based 
   dependencies. This is because if it won't find `git` command in the base
   image it will invoke `apt-get install git`.
-* At the moment it will not handle SSH agent on other platforms than Mac OS X.
-  However it should be quite trivial to add others.
+* At the moment it will not handle SSH agent on other platforms than Mac OS X
+  and Linux with X running. However it should be quite trivial to add others.
 
 
 # Let me believe that Karma returns!
