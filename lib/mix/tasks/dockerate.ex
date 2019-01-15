@@ -12,7 +12,8 @@ defmodule Mix.Tasks.Dockerate do
     # Determine app name
     app = Mix.Project.config |> Keyword.get(:app)
     version = Mix.Project.config |> Keyword.get(:version)
-    info "Assembling a Docker image for app #{app} #{version}, env = #{Mix.env}..."
+    env = "prod"
+    info "Assembling a Docker image for app #{app} #{version}, env = #{env}..."
 
     # Determine release name
     # FIXME read this from rel/config.exs
@@ -217,7 +218,7 @@ defmodule Mix.Tasks.Dockerate do
       Path.join(templates_path, "build.Dockerfile.eex")
       |> EEx.eval_file([
         base_image: base_image_build,
-        mix_env: Mix.env,
+        mix_env: env,
         git_deps_urls: git_deps_urls,
         source_dirs: source_dirs,
         build_extra_docker_commands: build_extra_docker_commands
@@ -227,7 +228,7 @@ defmodule Mix.Tasks.Dockerate do
       Path.join(templates_path, "release.Dockerfile.eex")
       |> EEx.eval_file([
         base_image: base_image_release,
-        mix_env: Mix.env,
+        mix_env: env,
         build_output_path_relative: build_output_path_relative,
         release_extra_docker_commands: release_extra_docker_commands,
         rel_name: rel_name,
@@ -340,7 +341,7 @@ defmodule Mix.Tasks.Dockerate do
         "--mount", "type=bind,source=#{build_output_path},target=/root/output",
         "--rm",
         "-t", target_image_build,
-        "sh", "-c", "(mix deps.get && mix do clean, compile --force && rm -rf _build && mix release && mv -v _build/#{Mix.env}/rel/#{rel_name} /root/output/app/)"
+        "sh", "-c", "(mix deps.get && mix do clean, compile --force && rm -rf _build && mix release --env=#{env} && mv -v _build/#{env}/rel/#{rel_name} /root/output/app/)"
       ]
 
     case docker_cmd_passthrough release_docker_args do
