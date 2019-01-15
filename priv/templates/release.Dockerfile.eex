@@ -11,4 +11,4 @@ USER app
 <% end %>
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
   CMD ["/opt/app/bin/<%= rel_name %>", "ping"]
-ENTRYPOINT ["/opt/app/bin/<%= rel_name %>", "foreground"]
+CMD ["/opt/app/bin/<%= rel_name %>", "foreground"]
